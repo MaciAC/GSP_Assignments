@@ -20,13 +20,23 @@ for i = 1:width(features_cat)
     features(:,i) = grp2idx(features_cat(:,i));
 end
 
-%% Similarity Matrix
-similarity_matrix = pdist2(features, features, 'cosine');
+%% Similarity Matrix and threshold
+metric = 'hamming'
 
-%% Threshold
-hamming_thr = 0.1;
+similarity_matrix = pdist2(features, features, metric);
 
-similarity_matrix(similarity_matrix < hamming_thr) = 0.1;
+hamming_thr = 0.4;
+cosine_thr = 0.15;
+
+if strcmp(metric, 'hamming')
+    similarity_matrix = 1 - similarity_matrix;
+    similarity_matrix = similarity_matrix - min(min(similarity_matrix));
+    similarity_matrix(similarity_matrix < hamming_thr) = 0.0;
+end
+
+if strcmp(metric, 'cosine')
+    similarity_matrix(similarity_matrix < cosine_thr) = 0.0;
+end
 
 %% D matrix, D^(-1) and D^(-1/2)
 D = zeros(height(features));
@@ -42,7 +52,7 @@ end
 %1 for Laplacian symmetric normalized
 %2 for Laplacian random walk
 %3 for Laplacian unnormalized
-laplacian_type = 2;
+laplacian_type = 1;
 
 L = D - similarity_matrix;
 
@@ -87,14 +97,15 @@ TP = CM_knn_H(1,1);
 FP = CM_knn_H(1,2);
 FN = CM_knn_H(2,1);
 TN = CM_knn_H(2,2);
-perf.error = (FP+FN)/(TP+FP+TN+FN);
-perf.accuracy = (TP+TN)/(TP+FP+TN+FN);
-perf.precision = TP/(TP+FP);
-perf.recall = TP/(TP+FN);
-perf.specificity = TN/(TN+FP);
-perf.f_score = 2*((precision*recall)/(precision+recall));
 
 P_isClass1_ClassifiedAsClass1 = TP/(TP+FP)
 P_isClass2_ClassifiedAsCLass1 = FP/(TP+FP)
 P_isClass1_ClassifiedAsClass2 = FN/(FN+TN)
 P_isClass2_ClassifiedAsClass2 = TN/(FN+TN)
+
+error = (FP+FN)/(TP+FP+TN+FN)
+accuracy = (TP+TN)/(TP+FP+TN+FN)
+precision = TP/(TP+FP)
+recall = TP/(TP+FN)
+specificity = TN/(TN+FP)
+f_score = 2*((precision*recall)/(precision+recall))
