@@ -21,21 +21,21 @@ for i = 1:width(features_cat)
 end
 
 %% Similarity Matrix
-similarity_matrix_hamming = pdist2(features, features, 'cosine');
+similarity_matrix = pdist2(features, features, 'cosine');
 
 %% Threshold
 hamming_thr = 0.1;
 
-similarity_matrix_hamming(similarity_matrix_hamming < hamming_thr) = 0.1;
+similarity_matrix(similarity_matrix < hamming_thr) = 0.1;
 
 %% D matrix, D^(-1) and D^(-1/2)
-D_hamming = zeros(height(features));
-D_hamming_invsqr = zeros(height(features));
-D_hamming_inv = zeros(height(features));
+D = zeros(height(features));
+D_invsqr = zeros(height(features));
+D_inv = zeros(height(features));
 for i = 1:height(features)
-    D_hamming(i,i) = sum(similarity_matrix_hamming(i,:)>0);
-    D_hamming_invsqr(i,i) = 1/sqrt(D_hamming(i,i));
-    D_hamming_inv(i,i) = 1/D_hamming(i,i);
+    D(i,i) = sum(similarity_matrix(i,:)>0);
+    D_invsqr(i,i) = 1/sqrt(D(i,i));
+    D_inv(i,i) = 1/D(i,i);
 end
 
 %% Eigenvalues and eigenvectores for the type of Laplacian used
@@ -44,32 +44,33 @@ end
 %3 for Laplacian unnormalized
 laplacian_type = 2;
 
+L = D - similarity_matrix;
+
 switch laplacian_type
     case 1
-        Lsn_hamming = D_hamming_invsqr * L_hamming * D_hamming_invsqr;
-        [EigVec_hamming, EigVal_hamming] = eigs(Lsn_hamming,2,'smallestabs');
+        Lsn = D_invsqr * L * D_invsqr;
+        [EigVec, EigVal] = eigs(Lsn,2,'smallestabs');
     case 2
-        Lrw_hamming = D_hamming_inv * L_hamming;
-        [EigVec_hamming, EigVal_hamming] = eigs(Lrw_hamming,2,'smallestabs');
+        Lrw = D_inv * L;
+        [EigVec, EigVal] = eigs(Lrw,2,'smallestabs');
     case 3
-        L_hamming = D_hamming - similarity_matrix_hamming;
-        [EigVec_hamming, EigVal_hamming] = eigs(L_hamming,2,'smallestabs');
+        [EigVec, EigVal] = eigs(L,2,'smallestabs');
 end
 %% Using k-means
 k=2;
-idx_hamming = kmeans(real(EigVec_hamming(:,1:2)), k);
+idx = kmeans(real(EigVec(:,1:2)), k);
 
 %%
-idx_hamming(idx_hamming == 1) = 14;
-idx_hamming(idx_hamming == 2) = 5;
+idx(idx == 1) = 14;
+idx(idx == 2) = 5;
 
 %%
-ok = idx_hamming == labels;
+ok = idx == labels;
 sum(ok)
 
 %%
 figure
-CM_knn_H=confusionmat(labels,idx_hamming)
+CM_knn_H=confusionmat(labels,idx)
 confusionchart(CM_knn_H,'FontSize',20)
 
 %%
@@ -77,9 +78,9 @@ figure
 colormap winter
 
 subplot(2,1,1)
-scatter(EigVec_hamming(:,1),EigVec_hamming(:,2), 4, labels, 'filled')
+scatter(EigVec(:,1),EigVec(:,2), 4, labels, 'filled')
 subplot(2,1,2)
-scatter(EigVec_hamming(:,1),EigVec_hamming(:,2), 4, idx_hamming, 'filled')
+scatter(EigVec(:,1),EigVec(:,2), 4, idx, 'filled')
 
 %% Performance
 TP = CM_knn_H(1,1);
