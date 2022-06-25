@@ -25,13 +25,18 @@ metric = 'hamming';
 
 similarity_matrix = pdist2(features, features, metric);
 
-hamming_thr = 0.25;
+hamming_thr = 0.15;
 cosine_thr = 0.15;
 
 if strcmp(metric, 'hamming')
     similarity_matrix = 1 - similarity_matrix;
     similarity_matrix = similarity_matrix - min(min(similarity_matrix));
+    
+    edges_before = sum(sum(similarity_matrix > 0.0));
     similarity_matrix(similarity_matrix < hamming_thr) = 0.0;
+    edges_after = sum(sum(similarity_matrix > 0.0));
+    percent_edges_out = (1 - edges_after/edges_before)*100
+
 end
 
 if strcmp(metric, 'cosine')
@@ -71,8 +76,8 @@ k=2;
 idx = kmeans(real(EigVec(:,1:2)), k);
 
 %%
-idx(idx == 1) = 14;
-idx(idx == 2) = 5;
+idx(idx == 1) = 5;
+idx(idx == 2) = 14;
 
 %%
 ok = idx == labels;
