@@ -21,11 +21,11 @@ for i = 1:width(features_cat)
 end
 
 %% Similarity Matrix and threshold
-metric = 'hamming'
+metric = 'hamming';
 
 similarity_matrix = pdist2(features, features, metric);
 
-hamming_thr = 0.4;
+hamming_thr = 0.25;
 cosine_thr = 0.15;
 
 if strcmp(metric, 'hamming')
