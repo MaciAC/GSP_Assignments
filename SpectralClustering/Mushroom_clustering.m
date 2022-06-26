@@ -30,7 +30,6 @@ cosine_thr = 0.3;
 
 if strcmp(metric, 'hamming')
     similarity_matrix = 1 - similarity_matrix;
-    
     edges_before = sum(sum(similarity_matrix > 0.0));
     similarity_matrix(similarity_matrix < hamming_thr) = 0.0;
     edges_after = sum(sum(similarity_matrix > 0.0));
@@ -55,6 +54,7 @@ end
 %1 for Laplacian symmetric normalized
 %2 for Laplacian random walk
 %3 for Laplacian unnormalized
+
 laplacian_type = 1;
 
 L = D - similarity_matrix;
@@ -73,7 +73,9 @@ end
 k=2;
 idx = kmeans(real(EigVec(:,1:2)), k);
 
-%%
+%% 
+% sometimes this is de correct label, sometimes the inverse
+% depends on the kmeands initialization.
 idx(idx == 1) = 5;
 idx(idx == 2) = 14;
 
