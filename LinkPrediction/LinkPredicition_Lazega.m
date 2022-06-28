@@ -34,12 +34,12 @@ end
 
 %% 4. Probability of detection and false alarm
 figure(1)
-A_roc = zeros(width(selected_idx),10);
-Adjacency_roc = zeros(width(selected_idx),10);
+
 for thr = 1:10
 
 Adjacency = Adjacency_orig;
 Adjacency(Adjacency_orig < thr) = 0.0;
+
 
 Detection = Adjacency .* A;
 temp = zeros(N_nodes);
@@ -49,15 +49,14 @@ n_detected = 0;
 n_expected = 0;
 n_false_alarm = 0;
 j=1;
-
+A_roc = zeros(width(selected_idx),10);
+Adjacency_roc = zeros(width(selected_idx),10);
 
 for i = selected_idx
-    if Adjacency(edges(i,1), edges(i,2)) > 0
-        Adjacency_roc(j,thr) = thr;
-    end
+    A_roc(j,thr) =  A(edges(i,1), edges(i,2));
+    Adjacency_roc(j,thr) = Adjacency(edges(i,1), edges(i,2));
     if A(edges(i,1), edges(i,2)) > 0
         n_expected = n_expected + 1;
-        A_roc(j,thr) = thr;
     end
     if Detection(edges(i,1), edges(i,2)) > 0
         n_detected = n_detected + 1; 
@@ -71,14 +70,11 @@ end
 P_detection = n_detected / n_expected
 
 P_false_alarm = n_false_alarm / n_expected
+
+plotroc(reshape(A_roc,1,[]), reshape(Adjacency_roc,1,[]))
+hold on
 end
-plotroc(reshape(A_roc,1,[]), reshape(Adjacency_roc,1,[]));
-%%
-[g,nodenums] = binaryImageGraph(Adjacency,4);
-xcoor = g.Nodes.x;
-ycoor = size(nodenums,2)-g.Nodes.y; % Flip to proper plot
-figure(2);
-plotImageGraph(g)
+
 %% functions
 function [N] = Common_Neighbors(vec1, vec2)
     N = sum(vec1 .* vec2);
