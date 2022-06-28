@@ -15,43 +15,81 @@ plotImageGraph(g)
 N_nodes = height(T);
 N_edges = N_nodes * (N_nodes - 1) / 2;
 Adjacency_orig = zeros(N_nodes);
-X = randi(N_nodes, N_edges/5, 2);
-for i = 1:height(X)
-    if X(i,1) == X(i,2)
-        if X(i,2) == N_nodes
-            X(i,2) = 1;
-        else
-            X(i,2) = X(i,2) + 1;
-        end
+
+%create list of edges
+edges = zeros(N_edges, 2);
+selected_idx = randperm(N_edges, N_edges/5); 
+n = 1;
+for i = 1:N_nodes
+    for j = i+1:N_nodes
+        edges(n,:) = [i j];
+        n=n+1;
     end
-    Adjacency_orig(X(i,1), X(i,2)) = Common_Neighbors(A(X(i,1),:), A(X(i,2),:));
-    Adjacency_orig(X(i,2), X(i,1)) = Adjacency_orig(X(i,1), X(i,2));
 end
 
+for i = selected_idx
+    Adjacency_orig(edges(i,1), edges(i,2)) = Common_Neighbors(A(edges(i,1),:), A(edges(i,2),:));
+    Adjacency_orig(edges(i,2), edges(i,1)) = Adjacency_orig(edges(i,1), edges(i,2));
+end
 
 %% 4. Probability of detection and false alarm
+figure(1)
+A_roc = zeros(width(selected_idx),10);
+Adjacency_roc = zeros(width(selected_idx),10);
 for thr = 1:10
-figure(thr)
 
-Adjacency = zeros(N_nodes);
-Adjacency(Adjacency_orig < thr) = 0;
-Adjacency(Adjacency_orig > 0) = 1;
+Adjacency = Adjacency_orig;
+Adjacency(Adjacency_orig < thr) = 0.0;
 
 Detection = Adjacency .* A;
-False_Alarm = A - Adjacency;
+temp = zeros(N_nodes);
+temp(Adjacency > 0) = 1;
+False_Alarm = A - temp;
+n_detected = 0;
+n_expected = 0;
+n_false_alarm = 0;
+j=1;
 
-n_detected = sum(Detection(Detection > 0)) / 2;
-P_detection = n_detected / (sum(A(A > 0))/2);
 
-n_false_alarm = sum(False_Alarm(False_Alarm == -1)) / 2;
-P_false_alarm = n_false_alarm / (sum(A(A > 0))/2);
-
-plotroc(reshape(A,1,[]), reshape(Adjacency,1,[]))
+for i = selected_idx
+    if Adjacency(edges(i,1), edges(i,2)) > 0
+        Adjacency_roc(j,thr) = thr;
+    end
+    if A(edges(i,1), edges(i,2)) > 0
+        n_expected = n_expected + 1;
+        A_roc(j,thr) = thr;
+    end
+    if Detection(edges(i,1), edges(i,2)) > 0
+        n_detected = n_detected + 1; 
+    end
+    if False_Alarm(edges(i,1), edges(i,2)) == -1
+        n_false_alarm = n_false_alarm + 1;
+    end
+    j = j +1;
 end
 
+P_detection = n_detected / n_expected
+
+P_false_alarm = n_false_alarm / n_expected
+end
+plotroc(reshape(A_roc,1,[]), reshape(Adjacency_roc,1,[]));
+%%
+[g,nodenums] = binaryImageGraph(Adjacency,4);
+xcoor = g.Nodes.x;
+ycoor = size(nodenums,2)-g.Nodes.y; % Flip to proper plot
+figure(2);
+plotImageGraph(g)
 %% functions
 function [N] = Common_Neighbors(vec1, vec2)
     N = sum(vec1 .* vec2);
+end
+
+function [N] = Jaccard_index(vec1, vec2)
+    N = sum(vec1 .* vec2) / sum(ceil(vec1 + vec2)/2);
+end
+
+function [N] = Addamic_Addar(vec1, vec2)
+    N = sum(1/log(sum(vec1 .* vec2)));
 end
 
 
