@@ -1,3 +1,4 @@
+clear all 
 run('/Users/maciaac/Documents/UPC/2n Semestre/GSP/GSP_Assignments/gspbox/gsp_start.m');
 %% Reading and visualization of the data
 
@@ -49,9 +50,9 @@ L = D - A;
 x = T_Celsius(:,1);
 x_ = conj(Vec)'*x;
 
-h_lowpass = zeros(height(x_));
+h_lowpass = zeros(height(x_),1);
 for i = 1:height(x_)
-    h_lowpass = 1 / (1 + Val(i,i));
+    h_lowpass(i,:) = 1 / (1 + Val(i,i));
 end
 y_ = x_ .* h_lowpass;
 
@@ -62,10 +63,10 @@ y_l = conj(Vec)'*y_;
 x = T_Celsius(:,1);
 x_ = conj(Vec)'*x;
 
-h_highpass = zeros(height(x_));
+h_highpass = zeros(height(x_),1);
 max_eigenval = max(max(Val));
 for i = 1:height(x_)
-    h_highpass = 1 / (1 - (Val(i,i)- max_eigenval));
+    h_highpass(i,:) = 1 / (1 - (Val(i,i)- max_eigenval));
     
 end
 y_ = x_ .* h_highpass;
@@ -95,6 +96,13 @@ for d = days
     
     y_h = Vec*y_high;
     y_l = Vec*y_low;
+
+    % for a nice plot
+    y_h = y_h + abs(min(y_h));
+    y_h = y_h / max(max(y_h));
+    y_l = y_l + abs(min(y_l));
+    y_l = y_l / max(max(y_l));
+
     figure(d);
     G = gsp_graph(A,position);
     %param.climits=[0 1];
