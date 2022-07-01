@@ -30,4 +30,67 @@ A = A + A';
 G = gsp_graph(A,position);
 gsp_plot_graph(G);
 
+%% Low pass filter
+% shift operator (A)
+[Vec, Val] = eig(A);
+x = T_Celsius(:,1);
+x_ = conj(Vec)'*x;
+
+h_lowpass = zeros(height(x_));
+for i = 1:height(x_)
+    h_lowpass = 1 / (1 + Val(i,i));
+end
+y_ = x_ .* h_lowpass;
+
+y_l = conj(Vec)'*y_;
+
+
+%% High pass filter
+x = T_Celsius(:,1);
+x_ = conj(Vec)'*x;
+
+h_highpass = zeros(height(x_));
+max_eigenval = max(max(Val));
+for i = 1:height(x_)
+    h_highpass = 1 / (1 - (Val(i,i)- max_eigenval));
+    
+end
+y_ = x_ .* h_highpass;
+
+y_h = conj(Vec)'*y_;
+
+figure(10)
+mesh([x,y_l])
+figure(11)
+mesh([x,y_h])
+
+%% different seasons
+days = [1, 91, 181, 271];
+max_eigenval = max(max(Val));
+for d = days
+    x = T_Celsius(:,d);
+    x_ = conj(Vec)'*x;
+    
+    h_lowpass = zeros(height(x_));
+    h_highpass = zeros(height(x_));
+    for i = 1:height(x_)
+        h_highpass = 1 / (1 - (Val(i,i) - max_eigenval));
+        h_lowpass = 1 / (1 + Val(i,i));
+    end
+    y_high = x_ .* h_highpass;
+    y_low = x_ .* h_lowpass;
+    
+    y_l = conj(Vec)'*y_high;
+    y_h = conj(Vec)'*y_low;
+    figure(d);
+    G = gsp_graph(A,position);
+    param.climits=[0 1];
+    subplot(1,2,1)
+    gsp_plot_signal(G,y_l,param);
+    subplot(1,2,2)
+    gsp_plot_signal(G,y_h,param);
+
+    
+end
+
 %%
